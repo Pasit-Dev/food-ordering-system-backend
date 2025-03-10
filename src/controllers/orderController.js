@@ -211,6 +211,7 @@ export const orderController = {
                 return { message: 'Failed to update order status' };
             }
     
+            // Update table status if order is cancelled or paid
             if ((order_status === 'Cancelled' || order_status === 'Paid') && table_id) {
                 await client.query(
                     `UPDATE Tables SET table_status = 'Available' WHERE table_id = $1`,
@@ -230,46 +231,57 @@ export const orderController = {
         } finally {
             client.release();
         }
-    },    
+    },
+     
     
 
     // Update payment method (order_id as params)
     updatePaymentMethod: async ({ params, body, set }) => {
         const { order_id } = params;  // Get order_id from URL params
         const { payment_method } = body;
-
+    
         if (!order_id || !payment_method) {
             set.status = 400;
             return { message: 'Missing required fields: order_id, payment_method' };
         }
-
+    
         const client = await pool.connect();
         try {
             // Check if the order exists
             const checkOrderResult = await client.query(
-                `SELECT order_id FROM Orders WHERE order_id = $1`,
+                `SELECT order_id, table_id FROM Orders WHERE order_id = $1`,
                 [order_id]
             );
-
+    
             if (checkOrderResult.rowCount === 0) {
                 set.status = 404;
                 return { message: `Order with ID ${order_id} not found` };
             }
-
+    
+            const table_id = checkOrderResult.rows[0].table_id;
+    
             // Update the payment method
             const updatePaymentMethodResult = await client.query(
                 `UPDATE Orders SET payment_method = $1, order_status = 'Paid' WHERE order_id = $2`,
                 [payment_method, order_id]
             );
-
+            
             if (updatePaymentMethodResult.rowCount === 0) {
                 set.status = 500;
                 return { message: 'Failed to update payment method' };
             }
-
+    
+            // Update table status to 'Available' when order is paid
+            if (table_id) {
+                await client.query(
+                    `UPDATE Tables SET table_status = 'Available' WHERE table_id = $1`,
+                    [table_id]
+                );
+            }
+    
             set.status = 200;
             return { message: 'Payment method updated successfully', order_id };
-
+    
         } catch (err) {
             console.error('Error updating payment method:', err);
             set.status = 500;
@@ -278,6 +290,7 @@ export const orderController = {
             client.release();
         }
     },
+    
     getOrderStatus: async ({ params }) => {
         const { order_id } = params;
     
