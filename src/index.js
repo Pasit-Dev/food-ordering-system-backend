@@ -5,7 +5,17 @@ import { swagger } from '@elysiajs/swagger';
 import menuRoutes from "./routes/menuRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import orderItemRoutes from "./routes/orderItemRoutes";
-const PORT = process.env.PORT || 8080;
+import pool from "./db/database";
+import { initDatabase } from "./initDatabase";
+const PORT = process.env.PORT || 3005;
+
+pool.connect().then(() => console.log('Connected to PostgreSQL'))
+.catch((err) => {
+  console.error('Error connecting to PostgreSQL', err)
+  process.exit(1);
+})
+
+initDatabase()
 
 const app = new Elysia()
   .use(cors({
