@@ -16,18 +16,6 @@ export const orderController = {
             let finalTableId = table_id === 'takeaway' ? null : table_id;
             let order_type = table_id === 'takeaway' ? 'Takeaway' : 'Dine-in';
     
-            if (finalTableId) {
-                const tableCheck = await client.query(
-                    `SELECT table_status FROM Tables WHERE table_id = $1`,
-                    [finalTableId]
-                );
-    
-                if (tableCheck.rowCount === 0 || tableCheck.rows[0].table_status !== 'Available') {
-                    await client.query('ROLLBACK');
-                    return { status: 400, message: 'Table is not available' };
-                }
-            }
-    
             const checkOrderResult = await client.query(
                 `SELECT order_id FROM Orders WHERE order_id = $1`,
                 [order_id]
@@ -66,7 +54,6 @@ export const orderController = {
                 insertedOrderId = checkOrderResult.rows[0].order_id;
             }
     
-            let totalAmount = 0;
             for (const item of items) {
                 const { menu_id, quantity, price, options } = item;
     
@@ -90,18 +77,8 @@ export const orderController = {
                     }
                 }
     
-                totalAmount += parseFloat(price) * quantity;
-                if (options && options.length > 0) {
-                    totalAmount += options.reduce((optionTotal, option) => {
-                        return optionTotal + parseFloat(option.additional_price || 0);
-                    }, 0);
-                }
             }
     
-            await client.query(
-                `UPDATE Orders SET total_amount = $1 WHERE order_id = $2`,
-                [totalAmount, insertedOrderId]
-            );
     
             await client.query('COMMIT');
             set.status = 201;
@@ -139,7 +116,7 @@ export const orderController = {
             const { rows } = await client.query(query);
     
             if (rows.length === 0) {
-                return { status: 404, message: 'No orders found' };
+                return { status: 404, message: 'No orders found'};
             }
     
             return { orders: rows };
@@ -301,7 +278,35 @@ export const orderController = {
             client.release();
         }
     },
-
+    getOrderStatus: async ({ params }) => {
+        const { order_id } = params;
+    
+        if (!order_id) {
+            return { status: 400, message: 'Missing required field: order_id' };
+        }
+    
+        const client = await pool.connect();
+        try {
+            const queryText = `
+                SELECT order_id, order_status 
+                FROM Orders 
+                WHERE order_id = $1
+            `;
+            const { rows } = await client.query(queryText, [order_id]);
+    
+            if (rows.length === 0) {
+                return { status: 404, message: `Order with ID ${order_id} not found` };
+            }
+    
+            return { order_id: rows[0].order_id, order_status: rows[0].order_status };
+        } catch (err) {
+            console.error('Error fetching order status:', err);
+            return { status: 500, message: 'Internal server error while fetching order status' };
+        } finally {
+            client.release();
+        }
+    },
+    
 };
 
 // Validation schema for creating an order

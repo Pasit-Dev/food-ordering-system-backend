@@ -40,7 +40,7 @@ export const orderItemController = {
             const { rows } = await client.query(query, [order_id]);
     
             if (rows.length === 0) {
-                return { status: 404, message: 'Order items not found' };
+                return { status: 404, message: 'Order items not found', order_items: [] };
             }
     
             console.log(`Fetched ${rows.length} order items`); // Debug: log the number of items fetched
