@@ -301,7 +301,7 @@ export const orderController = {
         const client = await pool.connect();
         try {
             const queryText = `
-                SELECT order_id, order_status, customer_name
+                SELECT order_id, order_status, customer_name, table_id
                 FROM Orders 
                 WHERE order_id = $1
             `;
@@ -311,7 +311,7 @@ export const orderController = {
                 return { status: 404, message: `Order with ID ${order_id} not found` };
             }
     
-            return { order_id: rows[0].order_id, order_status: rows[0].order_status, customer: rows[0].customer_name };
+            return { order_id: rows[0].order_id, order_status: rows[0].order_status, customer: rows[0].customer_name, table_id: rows[0].table_id };
         } catch (err) {
             console.error('Error fetching order status:', err);
             return { status: 500, message: 'Internal server error while fetching order status' };
