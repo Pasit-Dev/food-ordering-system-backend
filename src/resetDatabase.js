@@ -1,17 +1,22 @@
 import pool from "./db/database";
 
-
 export async function resetDatabase() {
-    const client = await pool.connect()
+    const client = await pool.connect();
     try {
-
-        const resetSQL = `TRUNCATE TABLE Menus, MenuGroups, MenuOptions, Orders, OrderItems, OrderItemOptions, OrderItemHistory RESTART IDENTITY CASCADE;`;
-        await client.query(resetSQL);
-
+        const deleteSQL = `
+            DELETE FROM OrderItemHistory;
+            DELETE FROM OrderItemOptions;
+            DELETE FROM OrderItems;
+            DELETE FROM Orders;
+            DELETE FROM MenuOptions;
+            DELETE FROM MenuGroups;
+            DELETE FROM Menus;
+        `;
+        await client.query(deleteSQL);
         console.log('Database reset successfully');
     } catch (error) {
-        console.error('Error resetting the database: ', error)
+        console.error('Error resetting the database: ', error);
     } finally {
-        client.release()
+        client.release();
     }
 }
