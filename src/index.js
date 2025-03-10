@@ -7,6 +7,7 @@ import orderRoutes from "./routes/orderRoutes";
 import orderItemRoutes from "./routes/orderItemRoutes";
 import pool from "./db/database";
 import { initDatabase } from "./initDatabase";
+import { resetDatabase } from "./resetDatabase";
 const PORT = process.env.PORT || 3005;
 
 pool.connect().then(() => console.log('Connected to PostgreSQL'))

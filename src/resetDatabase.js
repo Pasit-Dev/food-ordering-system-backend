@@ -1,7 +1,7 @@
 import pool from "./db/database";
 
 
-const resetDatabase = async () => {
+export async function resetDatabase() {
     try {
         await pool.connect();
         const resetSQL = `TRUNCATE TABLE Menus, MenuGroups, MenuOptions, Orders, OrderItems, OrderItemOptions, OrderItemHistory RESTART INDENTITY CASCADE;`;
