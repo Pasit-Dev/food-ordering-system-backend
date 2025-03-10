@@ -36,7 +36,6 @@ const app = new Elysia()
 .post('/reset-database', async (req, res) => {
   await resetDatabase();
   await initDatabase();
-  res.send('Database has been reset.')
 })
 .listen(PORT);
   
