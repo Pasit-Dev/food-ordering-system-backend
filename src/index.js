@@ -32,6 +32,11 @@ const app = new Elysia()
 .group('/menus', menuRoutes)
 .group('/orders', orderRoutes)
 .group('/order-items', orderItemRoutes)
+.post('/reset-database', async (req, res) => {
+  await resetDatabase();
+  await initDatabase();
+  res.send('Database has been reset.')
+})
 .listen(PORT);
   
 
