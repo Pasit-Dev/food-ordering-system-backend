@@ -55,13 +55,13 @@ export const orderController = {
             }
     
             for (const item of items) {
-                const { menu_id, quantity, price, options } = item;
+                const { menu_id, quantity, price, options, note } = item;
     
                 const insertOrderItemResult = await client.query(
-                    `INSERT INTO OrderItems (order_id, menu_id, quantity, price)
-                     VALUES ($1, $2, $3, $4)
+                    `INSERT INTO OrderItems (order_id, menu_id, quantity, price, note)
+                     VALUES ($1, $2, $3, $4, $5)
                      RETURNING order_item_id`,
-                    [insertedOrderId, menu_id, quantity, price]
+                    [insertedOrderId, menu_id, quantity, price, note]
                 );
     
                 const orderItemId = insertOrderItemResult.rows[0].order_item_id;
@@ -70,9 +70,9 @@ export const orderController = {
                     for (const option of options) {
                         const { menu_option_id, additional_price } = option;
                         await client.query(
-                            `INSERT INTO OrderItemOptions (order_item_id, menu_option_id)
-                             VALUES ($1, $2)`,
-                            [orderItemId, menu_option_id]
+                            `INSERT INTO OrderItemOptions (order_item_id, menu_option_id, additional_price)
+                             VALUES ($1, $2, $3)`,
+                            [orderItemId, menu_option_id, additional_price]
                         );
                     }
                 }
@@ -258,7 +258,7 @@ export const orderController = {
 
             // Update the payment method
             const updatePaymentMethodResult = await client.query(
-                `UPDATE Orders SET payment_method = $1 WHERE order_id = $2`,
+                `UPDATE Orders SET payment_method = $1, order_status = 'Paid' WHERE order_id = $2`,
                 [payment_method, order_id]
             );
 
@@ -288,7 +288,7 @@ export const orderController = {
         const client = await pool.connect();
         try {
             const queryText = `
-                SELECT order_id, order_status 
+                SELECT order_id, order_status, customer_name
                 FROM Orders 
                 WHERE order_id = $1
             `;
@@ -298,7 +298,7 @@ export const orderController = {
                 return { status: 404, message: `Order with ID ${order_id} not found` };
             }
     
-            return { order_id: rows[0].order_id, order_status: rows[0].order_status };
+            return { order_id: rows[0].order_id, order_status: rows[0].order_status, customer: rows[0].customer_name };
         } catch (err) {
             console.error('Error fetching order status:', err);
             return { status: 500, message: 'Internal server error while fetching order status' };
@@ -319,6 +319,7 @@ export const validationCreateOrder = t.Object({
             menu_id: t.Number(),
             quantity: t.Number(),
             price: t.Number(),
+            note: t.String(),
             options: t.Array(
                 t.Object({
                     menu_option_id: t.Number(),
