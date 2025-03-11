@@ -131,8 +131,6 @@ export const orderItemController = {
                 SELECT 
                     m.menu_id,
                     m.menu_name,
-                    m.price AS menu_price,
-                    m.image AS menu_image,
                     SUM(oi.quantity) AS total_sold
                 FROM 
                     OrderItems oi
@@ -167,7 +165,7 @@ export const orderItemController = {
         const client = await pool.connect();
 
         try {
-            console.log('Fetching best selling menus...');
+            console.log('Fetching top five menus...');
     
             // Query เพื่อหาว่าเมนูไหนที่ขายดีที่สุด (มีจำนวนการสั่งซื้อสูงสุด)
             const query = `
@@ -192,14 +190,14 @@ export const orderItemController = {
             const { rows } = await client.query(query);
     
             if (rows.length === 0) {
-                return { status: 404, message: 'No best selling menus found', best_selling_menus: [] };
+                return { status: 404, message: 'No top five menus found', best_selling_menus: [] };
             }
     
-            console.log(`Fetched ${rows.length} best selling menus`);
+            console.log(`Fetched ${rows.length} top five menus`);
     
             return { best_selling_menus: rows };
         } catch (err) {
-            console.error('Error fetching best selling menus:', err);
+            console.error('Error fetching top five menus:', err);
             return { status: 500, message: 'Internal server error while fetching best selling menus', error: err.message };
         } finally {
             client.release();
