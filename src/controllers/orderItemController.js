@@ -119,5 +119,90 @@ export const orderItemController = {
         } finally {
             client.release();
         }
+    },
+    getBestSellingMenu: async () => {
+        const client = await pool.connect();
+
+        try {
+            console.log('Fetching best selling menus...');
+    
+            // Query เพื่อหาว่าเมนูไหนที่ขายดีที่สุด (มีจำนวนการสั่งซื้อสูงสุด)
+            const query = `
+                SELECT 
+                    m.menu_id,
+                    m.menu_name,
+                    m.price AS menu_price,
+                    m.image AS menu_image,
+                    SUM(oi.quantity) AS total_sold
+                FROM 
+                    OrderItems oi
+                INNER JOIN Menus m ON oi.menu_id = m.menu_id
+                WHERE
+                    oi.order_item_status = 'Served'  -- หรือสถานะที่หมายถึงการขายสำเร็จ
+                GROUP BY
+                    m.menu_id
+                ORDER BY
+                    total_sold DESC
+                LIMIT 1;  -- เอาแค่อันดับแรก
+            `;
+    
+            const { rows } = await client.query(query);
+    
+            if (rows.length === 0) {
+                return { status: 404, message: 'No best selling menus found', best_selling_menus: [] };
+            }
+    
+            console.log(`Fetched ${rows.length} best selling menus`);
+    
+            return { best_selling_menus: rows };
+        } catch (err) {
+            console.error('Error fetching best selling menus:', err);
+            return { status: 500, message: 'Internal server error while fetching best selling menus', error: err.message };
+        } finally {
+            client.release();
+        }
+    },
+
+    getTopFiveMenu: async () => {
+        const client = await pool.connect();
+
+        try {
+            console.log('Fetching best selling menus...');
+    
+            // Query เพื่อหาว่าเมนูไหนที่ขายดีที่สุด (มีจำนวนการสั่งซื้อสูงสุด)
+            const query = `
+                SELECT 
+                    m.menu_id,
+                    m.menu_name,
+                    m.price AS menu_price,
+                    m.image AS menu_image,
+                    SUM(oi.quantity) AS total_sold
+                FROM 
+                    OrderItems oi
+                INNER JOIN Menus m ON oi.menu_id = m.menu_id
+                WHERE
+                    oi.order_item_status = 'Served'  -- หรือสถานะที่หมายถึงการขายสำเร็จ
+                GROUP BY
+                    m.menu_id
+                ORDER BY
+                    total_sold DESC
+                LIMIT 5;  -- เอาแค่ 5 อันดับแรก
+            `;
+    
+            const { rows } = await client.query(query);
+    
+            if (rows.length === 0) {
+                return { status: 404, message: 'No best selling menus found', best_selling_menus: [] };
+            }
+    
+            console.log(`Fetched ${rows.length} best selling menus`);
+    
+            return { best_selling_menus: rows };
+        } catch (err) {
+            console.error('Error fetching best selling menus:', err);
+            return { status: 500, message: 'Internal server error while fetching best selling menus', error: err.message };
+        } finally {
+            client.release();
+        }
     }
 };
